@@ -13,8 +13,8 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.2.8.RELEASE'
-        classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.2"
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.5.13'
+        classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlinVersion"
         classpath "jp.classmethod.aws:gradle-aws-plugin:0.41"
@@ -37,6 +37,10 @@ repositories {
     mavenCentral()
 }
 
+ext {
+    springCloudFunctionVersion = "3.2.4"
+}
+
 dependencies { 
     implementation 'com.amazonaws:aws-lambda-java-core:1.2.1'
     implementation 'com.amazonaws:aws-lambda-java-events:3.11.0'
@@ -46,7 +50,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-reflect"
 
 //    compile 'org.springframework.cloud:spring-cloud-starter-function-web:2.1.0.RELEASE'
-    implementation 'org.springframework.cloud:spring-cloud-function-adapter-aws:3.2.2'
+    implementation "org.springframework.cloud:spring-cloud-function-adapter-aws:${springCloudFunctionVersion}"
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'net.bytebuddy:byte-buddy:1.12.9'
@@ -61,6 +65,10 @@ compileKotlin {
 
 shadowJar {
     classifier = 'aws'
+    dependencies {
+        exclude(
+                dependency("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}"))
+    }
     mergeServiceFiles()
     append 'META-INF/spring.handlers'
     append 'META-INF/spring.schemas'
@@ -71,7 +79,7 @@ shadowJar {
     }
 }
 
-assemble.dependsOn shadowJar
+assemble.dependsOn = [shadowJar]
 
 task deployFunction(type: AWSLambdaMigrateFunctionTask, dependsOn: [assemble, test]) {
 //    functionName = project.name
